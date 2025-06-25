@@ -1,72 +1,54 @@
-import openai
-import os
-import base64
 import requests
-from dotenv import load_dotenv
+from datetime import datetime
 
-load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# ✅ Your WordPress credentials (already filled in)
+WORDPRESS_SITE = "https://www.josephsantarose.com"
+USERNAME = "jsantarose"
+APPLICATION_PASSWORD = "DEQW MHJ2 Jmkw vKZB PzJR 0Sxy"
 
-def get_product_info(link):
+def get_product_info():
+    # Sample product info (you can customize or upgrade this later)
     return {
-        "title": "Top-Rated Amazon Find",
-        "description": "This product is trending and highly rated. Find out why it’s a must-have!",
-        "image": "https://via.placeholder.com/600x400",  # You can replace this later
-        "link": link
+        "name": "Top-Selling Amazon Find",
+        "price": "$19.99",
+        "features": ["Durable", "Affordable", "Highly Rated"],
+        "affiliate_link": "https://amzn.to/3TH9LnW"
     }
 
 def generate_blog_post(product):
-    prompt = f"""
-Write an SEO-optimized blog post about this Amazon product:
-Title: {product['title']}
-Description: {product['description']}
-Affiliate Link: {product['link']}
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    slug = f"{product['name'].lower().replace(' ', '-')}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-Include:
-- A catchy title
-- Introduction
-- Key benefits or features
-- Why it’s trending
-- Final call to action with the link
-"""
+    title = f"{product['name']} Review – {timestamp}"
+    content = f"""
+    <h2>{product['name']}</h2>
+    <p>Price: {product['price']}</p>
+    <ul>
+        {''.join(f'<li>{feature}</li>' for feature in product['features'])}
+    </ul>
+    <p><a href="{product['affiliate_link']}" target="_blank">Buy now on Amazon</a></p>
+    <p><em>Automatically posted on {timestamp}</em></p>
+    """
 
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}]
-    )
-
-    content = response['choices'][0]['message']['content']
     return {
-        "title": product["title"],
+        "title": title,
+        "slug": slug,
+        "status": "publish",
         "content": content
     }
 
 def post_to_wordpress(post):
-    wp_url = os.getenv("WORDPRESS_URL")  # Should be your site like: https://www.josephsantarose.com
-    username = os.getenv("WORDPRESS_USERNAME")
-    app_password = os.getenv("WORDPRESS_PASSWORD")
-
-    credentials = f"{username}:{app_password}"
-    token = base64.b64encode(credentials.encode())
+    url = f"{WORDPRESS_SITE}/wp-json/wp/v2/posts"
     headers = {
-        "Authorization": f"Basic {token.decode('utf-8')}",
         "Content-Type": "application/json"
     }
+    auth = (USERNAME, APPLICATION_PASSWORD)
 
-    payload = {
-        "title": post["title"],
-        "content": post["content"],
-        "status": "publish"
-    }
+    response = requests.post(url, json=post, headers=headers, auth=auth)
 
-    response = requests.post(
-        f"{wp_url}/wp-json/wp/v2/posts",
-        headers=headers,
-        json=payload
-    )
-
-    if response.status_code == 201:
-        print("✅ Blog post published successfully.")
+    if response.status_code in [200, 201]:
+        print("✅ Blog post published successfully!")
+        print("Post URL:", response.json().get("link"))
     else:
         print("❌ Failed to publish post:", response.status_code, response.text)
 
