@@ -2,4 +2,4 @@ openai==0.28
 python-dotenv
 requests
 python-wordpress-xmlrpc
-
+beautifulsoup4
