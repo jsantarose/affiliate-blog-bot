@@ -19,7 +19,7 @@ def run_blog_bot():
 
     for _ in range(3):  # Create 3 blog posts
         link = random.choice(AFFILIATE_LINKS)
-        product = get_product_info(link)
+        product = get_product_info()
         post = generate_blog_post(product)
         post_to_wordpress(post)
 
