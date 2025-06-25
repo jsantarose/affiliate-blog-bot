@@ -48,7 +48,7 @@ def post_to_wordpress(post):
 
     if response.status_code in [200, 201]:
         print("✅ Blog post published successfully!")
-        print("Post URL:", response.json().get("link"))
+        print("Post URL:", response.json()[0].get("link"))
     else:
         print("❌ Failed to publish post:", response.status_code, response.text)
 
